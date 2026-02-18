@@ -42,14 +42,8 @@ def clone_repositories(repos: List[RepoSpec], clone_dir: str) -> None:
             print(f"[error] failed to clone {name}: {e}")
 
 
-def default_repo_list() -> List[RepoSpec]:
-    """
-    Starter list of reputable Java-heavy repos
-    """
+def default_repo_list():
     return [
-        RepoSpec("https://github.com/google/guava.git"),
-        RepoSpec("https://github.com/apache/commons-lang.git"),
-        RepoSpec("https://github.com/apache/commons-io.git"),
-        RepoSpec("https://github.com/junit-team/junit5.git"),
-        RepoSpec("https://github.com/square/okhttp.git"),
+        RepoSpec("https://github.com/google/guava.git") #use guava repo (well known) for initial poc
     ]
+
