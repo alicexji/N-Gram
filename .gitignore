@@ -1,0 +1,14 @@
+# cloned repositories
+data/raw/repos/
+
+# processed datasets
+data/processed/
+
+__pycache__/
+*.pyc
+
+.venv/
+
+# OS files
+.DS_Store
+Thumbs.db

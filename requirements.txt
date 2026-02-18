@@ -1,0 +1,5 @@
+gitpython
+javalang
+pandas
+requests
+tqdm
