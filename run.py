@@ -58,10 +58,21 @@ def stage_split():
         seed=42
     )
 
+def stage_train():
+    from src.modeling.train_validate import TrainConfig, train_and_validate
+
+    cfg = TrainConfig(
+        train_path="data/processed/T3.txt",
+        val_path="data/processed/val.txt",
+        n_values=[3, 5, 7],
+        alpha=0.1
+    )
+    train_and_validate(cfg)
+
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--stage", choices=["mine", "split", "all"], default="all")
+    parser.add_argument("--stage", choices=["mine", "split", "train", "all"], default="all")
     parser.add_argument("--max_methods", type=int, default=70000)
     args = parser.parse_args()
 
@@ -70,6 +81,10 @@ def main():
 
     if args.stage in ("split", "all"):
         stage_split()
+
+    if args.stage in ("train", "all"):
+        stage_train()
+
 
 
 if __name__ == "__main__":
