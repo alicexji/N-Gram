@@ -1,0 +1,8 @@
+{
+  "smoothing": "backoff",
+  "train_set": "T3",
+  "n": 7,
+  "beta": 0.4,
+  "unigram_alpha": 0.1,
+  "val_perplexity": 1.6817535670041626
+}

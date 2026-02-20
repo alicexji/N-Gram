@@ -17,16 +17,42 @@ def _read_lines(path: str) -> List[List[str]]:
                 methods.append(toks)
     return methods
 
-def build_next_token_index(model: NGramModel):
+# def build_next_token_index(model: NGramModel):
+#     """
+#     Build a map: context(tuple) -> dict(next_token -> count)
+#     This makes argmax prediction fast.
+#     """
+#     next_map = defaultdict(lambda: defaultdict(int))
+#     for ngram, cnt in model.ngram_counts.items():
+#         ctx = ngram[:-1]
+#         nxt = ngram[-1]
+#         next_map[ctx][nxt] += cnt
+#     return next_map
+
+def build_next_token_index(model):
     """
     Build a map: context(tuple) -> dict(next_token -> count)
-    This makes argmax prediction fast.
+    Works for both NGramModel and BackoffNGramModel
     """
+
     next_map = defaultdict(lambda: defaultdict(int))
-    for ngram, cnt in model.ngram_counts.items():
+
+    # Case 1: Add-alpha model
+    if hasattr(model, "ngram_counts"):
+        source = model.ngram_counts
+
+    # Case 2: Backoff model
+    elif hasattr(model, "counts_by_order"):
+        source = model.counts_by_order[model.n]
+
+    else:
+        raise ValueError("Unknown model type for next-token index")
+
+    for ngram, cnt in source.items():
         ctx = ngram[:-1]
         nxt = ngram[-1]
         next_map[ctx][nxt] += cnt
+
     return next_map
 
 # def _predict_next_token(model: NGramModel, context: List[str]) -> Tuple[str, float]:

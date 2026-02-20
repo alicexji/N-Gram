@@ -39,6 +39,10 @@ class BackoffNGramModel:
         }
         self.total_unigrams = 0
 
+        # probability cache for memoization, otherwise backoff is too expensive
+        # key: (context_tuple, token) → probability
+        self._prob_cache: Dict[Tuple[Tuple[str, ...], str], float] = {}
+
     def _pad(self, tokens: List[str]) -> List[str]:
         return [self.BOS] * (self.n - 1) + tokens + [self.EOS]
 
@@ -87,32 +91,82 @@ class BackoffNGramModel:
         den = self.total_unigrams + self.unigram_alpha * self.vocab_size
         return num / den if den > 0 else 0.0
 
+    # def prob(self, context_list: List[str], token: str) -> float:
+    #     # Map OOV
+    #     token = token if token in self.vocab else self.UNK
+    #     ctx_tokens = [t if t in self.vocab else self.UNK for t in context_list]
+
+    #     # Use up to n-1 context tokens
+    #     ctx_tokens = ctx_tokens[-(self.n - 1):]
+
+    #     # Try highest order down to bigram; then unigram
+    #     backoff_factor = 1.0
+
+    #     for k in range(self.n, 1, -1):  # k = n, n-1, ..., 2
+    #         need = k - 1
+    #         if len(ctx_tokens) < need:
+    #             continue
+    #         ctx = tuple(ctx_tokens[-need:])
+    #         gram = ctx + (token,)
+    #         if self.counts_by_order[k].get(gram, 0) > 0:
+    #             p = self._ml_prob(k, ctx, token)
+    #             return max(backoff_factor * p, 1e-12)
+
+    #         backoff_factor *= self.beta  # unseen -> back off
+
+    #     # Unigram base case (smoothed)
+    #     p1 = self._unigram_prob(token)
+    #     return max(backoff_factor * p1, 1e-12)
+
     def prob(self, context_list: List[str], token: str) -> float:
         # Map OOV
         token = token if token in self.vocab else self.UNK
-        ctx_tokens = [t if t in self.vocab else self.UNK for t in context_list]
 
-        # Use up to n-1 context tokens
-        ctx_tokens = ctx_tokens[-(self.n - 1):]
+        # Keep last (n-1) context tokens
+        ctx_tokens = tuple(
+            t if t in self.vocab else self.UNK
+            for t in context_list[-(self.n - 1):]
+        )
 
-        # Try highest order down to bigram; then unigram
+        key = (ctx_tokens, token)
+
+        # Faster cache lookup (single dict access)
+        cached = self._prob_cache.get(key)
+        if cached is not None:
+            return cached
+
         backoff_factor = 1.0
 
-        for k in range(self.n, 1, -1):  # k = n, n-1, ..., 2
+        for k in range(self.n, 1, -1):
             need = k - 1
             if len(ctx_tokens) < need:
                 continue
-            ctx = tuple(ctx_tokens[-need:])
+
+            ctx = ctx_tokens[-need:]
             gram = ctx + (token,)
-            if self.counts_by_order[k].get(gram, 0) > 0:
-                p = self._ml_prob(k, ctx, token)
-                return max(backoff_factor * p, 1e-12)
 
-            backoff_factor *= self.beta  # unseen -> back off
+            # Single lookup instead of .get() + indexing
+            num = self.counts_by_order[k].get(gram)
+            if num:
+                den = self.context_counts_by_order[k].get(ctx, 0)
+                if den > 0:
+                    p = num / den
+                    result = max(backoff_factor * p, 1e-12)
+                    self._prob_cache[key] = result
+                    return result
 
-        # Unigram base case (smoothed)
-        p1 = self._unigram_prob(token)
-        return max(backoff_factor * p1, 1e-12)
+            backoff_factor *= self.beta
+
+        # Unigram fallback (inline instead of calling function)
+        c = self.counts_by_order[1].get((token,), 0)
+        num = c + self.unigram_alpha
+        den = self.total_unigrams + self.unigram_alpha * self.vocab_size
+        p1 = num / den if den > 0 else 0.0
+
+        result = max(backoff_factor * p1, 1e-12)
+        self._prob_cache[key] = result
+        return result
+
 
     def perplexity(self, eval_path: str) -> float:
         log_sum = 0.0

@@ -89,14 +89,14 @@ Run:
 ```
 python run.py --stage train
 ```
-
-This step will take a while. Backoff is much more time consuming. Est 50 min.
+The attributes of the best model will be stored in results/best_config.json
+This step will take a while. Backoff is much more time consuming. Est 1 hour.
 
 ### Generate JSON predictions and evaluate test perplexity
 The first step should have generated our own test set data/processed/test_self.txt
-Insert the professor's provided test set into that same folder data/processed and rename the file provided.txt
+Insert the professor's provided test set into that same folder data/processed and rename the file to provided.txt
 
-We are going to generate results on both our self created test set and the provided test set.
+We are going to generate results on both our self created test set and the provided test using the best model that is stored in best_config.json.
 
 Run:
 ```
@@ -106,6 +106,8 @@ python run.py --stage json
 Output in results folder. You should see two files:
 results-self.json
 results-provided.json
+
+This step will take a long time because it will most likely choose n = 7 + backoff as the best model. If you only want to check that this step works, you can manually set n = 3 in the best_config.json generated in the previous step.
 
 ### Run entire pipeline
 Alternatively, you could run the entire pipeline (rather than going in stages) with 
