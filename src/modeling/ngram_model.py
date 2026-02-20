@@ -8,8 +8,8 @@ from typing import Dict, List, Tuple, Set
 class NGramModel:
     """
     Count-based n-gram language model with add-alpha smoothing.
-    - Builds vocabulary from training only
-    - Maps unseen tokens to <UNK> at eval time
+    Builds vocabulary from training set
+    Maps unseen tokens to <UNK> at eval time
     """
 
     def __init__(self, n: int, alpha: float = 0.1):
@@ -31,18 +31,18 @@ class NGramModel:
         return [self.BOS] * (self.n - 1) + tokens + [self.EOS]
 
     def train_from_file(self, train_path: str) -> None:
-        # First pass: build vocab from training
+        # first pass through data lets us build vocab from training
         with open(train_path, "rb") as f:
             for line in f:
                 toks = line.decode("utf-8", errors="ignore").strip().split()
                 for t in toks:
                     self.vocab.add(t)
 
-        # Add special tokens to vocab
+        # adding special tokens to vocab
         self.vocab.update([self.BOS, self.EOS, self.UNK])
         self.vocab_size = len(self.vocab)
 
-        # Second pass: count ngrams
+        # in the second pass count ngrams
         with open(train_path, "rb") as f:
             for line in f:
                 toks = line.decode("utf-8", errors="ignore").strip().split()
@@ -69,7 +69,7 @@ class NGramModel:
 
     def perplexity(self, eval_path: str) -> float:
         """
-        Per assignment: use probability of the ground-truth next token. :contentReference[oaicite:1]{index=1}
+        use probability of the ground-truth next token. :contentReference[oaicite:1]{index=1}
         """
         log_sum = 0.0
         N = 0
@@ -82,8 +82,8 @@ class NGramModel:
 
                 for i in range(self.n - 1, len(toks)):
                     context = toks[i - (self.n - 1): i]
-                    gt = toks[i]
-                    p = self.prob(context, gt)
+                    gt = toks[i]        # ground truth next token
+                    p = self.prob(context, gt)      # probability of ground truth token aka P(ground_truth_token | context)
 
                     log_sum += math.log(p)
                     N += 1

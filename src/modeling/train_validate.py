@@ -16,7 +16,7 @@ class TrainConfig:
 
 def train_and_validate(cfg: TrainConfig) -> Tuple[int, Dict[int, float]]:
     if cfg.n_values is None:
-        cfg.n_values = [3, 5, 7]
+        cfg.n_values = [3, 5, 7]    #training values for n
 
     results: Dict[int, float] = {}
 
@@ -25,10 +25,10 @@ def train_and_validate(cfg: TrainConfig) -> Tuple[int, Dict[int, float]]:
         model = NGramModel(n=n, alpha=cfg.alpha)
         model.train_from_file(cfg.train_path)
 
-        pp = model.perplexity(cfg.val_path)
+        pp = model.perplexity(cfg.val_path)         #compute validation perplexity
         results[n] = pp
         print(f"{n}-gram validation perplexity: {pp:.4f}")
 
-    best_n = min(results, key=results.get)
+    best_n = min(results, key=results.get)          # select model with lowest perplexity (best one)
     print(f"\nBest n on validation: {best_n} (PP={results[best_n]:.4f})")
     return best_n, results

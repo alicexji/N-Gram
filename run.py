@@ -121,9 +121,9 @@ def stage_json():
         testset_name="test_self.txt"
     )
 
-    # Provided test set (YOU must put the provided file in data/processed/)
+    # Provided test set
     provided_path = "data/processed/provided.txt"
-    if os.path.exists(provided_path):
+    if os.path.exists(provided_path):       # if test set hasn't been provided yet, we skip
         evaluate_to_json(
             model=model,
             test_path=provided_path,

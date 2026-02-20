@@ -122,7 +122,8 @@ def evaluate_to_json(
             "predictions": preds
         })
 
-    perplexity = math.exp(-total_log_sum / total_N) if total_N > 0 else float("inf")
+    # total_n > 0 ensures we don't divide by 0, so we return infinity
+    perplexity = math.exp(-total_log_sum / total_N) if total_N > 0 else float("inf")   
 
     payload = {
         "testSet": testset_name or test_path,
