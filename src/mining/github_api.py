@@ -24,6 +24,9 @@ def fetch_top_java_repos(
     pushed_after: str = "2024-02-17",  # a year ago from today
     sleep_s: float = 0.2,
 ) -> List[RepoInfo]:
+    '''
+    Queries the GitHub Search API to retrieve popular, recent, non-fork Java repositories
+    '''
     repos: List[RepoInfo] = []
     page = 1
     per_page = min(per_page, 100)

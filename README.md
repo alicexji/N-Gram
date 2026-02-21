@@ -82,9 +82,13 @@ Run:
 python run.py --stage split
 ```
 
-Output will be in the folder
+Output will be
 ```
-data/processed/
+data/processed/T1.txt
+data/processed/T2.txt
+data/processed/T3.txt
+data/processed/test_self.txt
+data/processed/val.txt
 ```
 
 ### Train models and evaluate validation perplexity
