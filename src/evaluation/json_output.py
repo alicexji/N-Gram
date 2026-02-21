@@ -17,6 +17,7 @@ def _read_lines(path: str) -> List[List[str]]:
                 methods.append(toks)
     return methods
 
+# THIS METHOD WORKS FOR ADD-ALPHA MODEL ONLY!
 # def build_next_token_index(model: NGramModel):
 #     """
 #     Build a map: context(tuple) -> dict(next_token -> count)
@@ -37,11 +38,11 @@ def build_next_token_index(model):
 
     next_map = defaultdict(lambda: defaultdict(int))
 
-    # Case 1: Add-alpha model
+    # Case 1 Add-alpha model
     if hasattr(model, "ngram_counts"):
         source = model.ngram_counts
 
-    # Case 2: Backoff model
+    # Case 2 Backoff model
     elif hasattr(model, "counts_by_order"):
         source = model.counts_by_order[model.n]
 
@@ -123,6 +124,7 @@ def evaluate_to_json(
             gt = padded[i]
 
             # ground-truth probability for perplexity (required) :contentReference[oaicite:2]{index=2}
+            # we evaluate perplexity P(ground-truth token | context)
             p_gt = model.prob(context, gt)
             total_log_sum += math.log(p_gt)
             total_N += 1

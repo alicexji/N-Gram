@@ -91,97 +91,89 @@ class BackoffNGramModel:
         den = self.total_unigrams + self.unigram_alpha * self.vocab_size
         return num / den if den > 0 else 0.0
 
-    # def prob(self, context_list: List[str], token: str) -> float:
-    #     # Map OOV
-    #     token = token if token in self.vocab else self.UNK
-    #     ctx_tokens = [t if t in self.vocab else self.UNK for t in context_list]
-
-    #     # Use up to n-1 context tokens
-    #     ctx_tokens = ctx_tokens[-(self.n - 1):]
-
-    #     # Try highest order down to bigram; then unigram
-    #     backoff_factor = 1.0
-
-    #     for k in range(self.n, 1, -1):  # k = n, n-1, ..., 2
-    #         need = k - 1
-    #         if len(ctx_tokens) < need:
-    #             continue
-    #         ctx = tuple(ctx_tokens[-need:])
-    #         gram = ctx + (token,)
-    #         if self.counts_by_order[k].get(gram, 0) > 0:
-    #             p = self._ml_prob(k, ctx, token)
-    #             return max(backoff_factor * p, 1e-12)
-
-    #         backoff_factor *= self.beta  # unseen -> back off
-
-    #     # Unigram base case (smoothed)
-    #     p1 = self._unigram_prob(token)
-    #     return max(backoff_factor * p1, 1e-12)
-
     def prob(self, context_list: List[str], token: str) -> float:
-        # Map OOV
+        """
+        Compute P(token | context) using stupid backoff.
+
+        Strategy:
+        1. Try highest-order n-gram first.
+        2. If unseen, multiply by beta and back off to shorter context.
+        3. If we back off all the way, use smoothed unigram probability.
+        4. Cache results to avoid recomputing the same probability repeatedly.
+        """
+        # Map OOV to <UNK> if not seen during training
         token = token if token in self.vocab else self.UNK
 
-        # Keep last (n-1) context tokens
+        # Keep only last (n-1) context tokens and store as tuple so it can easily be used as dict key
         ctx_tokens = tuple(
             t if t in self.vocab else self.UNK
             for t in context_list[-(self.n - 1):]
         )
 
-        key = (ctx_tokens, token)
-
+        key = (ctx_tokens, token)   # check cache to see if we computed this (context, token) in the past
         # Faster cache lookup (single dict access)
         cached = self._prob_cache.get(key)
         if cached is not None:
             return cached
 
-        backoff_factor = 1.0
+        backoff_factor = 1.0    #keep track of beta multipliers
 
+        # start from full order n down to bigram
         for k in range(self.n, 1, -1):
-            need = k - 1
-            if len(ctx_tokens) < need:
+            need = k - 1    #how many context tokens are required
+            if len(ctx_tokens) < need:  # if not enough context, skip this order
                 continue
 
             ctx = ctx_tokens[-need:]
             gram = ctx + (token,)
 
-            # Single lookup instead of .get() + indexing
+            # check if this k-gram was seen in training
             num = self.counts_by_order[k].get(gram)
             if num:
+                # if seen, compute max estimate
                 den = self.context_counts_by_order[k].get(ctx, 0)
                 if den > 0:
                     p = num / den
                     result = max(backoff_factor * p, 1e-12)
                     self._prob_cache[key] = result
                     return result
-
+            # if unseen at this order, back off
             backoff_factor *= self.beta
 
-        # Unigram fallback (inline instead of calling function)
+        # Unigram fallback with add-alpha smoothing
         c = self.counts_by_order[1].get((token,), 0)
         num = c + self.unigram_alpha
         den = self.total_unigrams + self.unigram_alpha * self.vocab_size
         p1 = num / den if den > 0 else 0.0
 
         result = max(backoff_factor * p1, 1e-12)
+
+        # cache unigram result
         self._prob_cache[key] = result
+
         return result
 
 
     def perplexity(self, eval_path: str) -> float:
-        log_sum = 0.0
-        N = 0
-        with open(eval_path, "rb") as f:
+        """
+        Compute perplexity of the model on an evaluation file.
+        Formula:
+            PP = exp( - (1/N) * sum log P(w_t | context_t) )
+        use the probability of the *ground-truth* next token.
+        """
+        log_sum = 0.0   # accumulate sum of log prob
+        N = 0           # num of predicted tokens
+        with open(eval_path, "rb") as f:    # read file line by line
             for line in f:
-                toks = line.decode("utf-8", errors="ignore").strip().split()
-                toks = [t if t in self.vocab else self.UNK for t in toks]
+                toks = line.decode("utf-8", errors="ignore").strip().split()    #tokenize the line
+                toks = [t if t in self.vocab else self.UNK for t in toks]       #replace oov with unk
                 padded = self._pad(toks)
 
-                for i in range(self.n - 1, len(padded)):
+                for i in range(self.n - 1, len(padded)):        #loop over each position where we predict a next token
                     context = padded[i - (self.n - 1) : i]
                     gt = padded[i]  # ground-truth next token
                     p = self.prob(context, gt)  # P(gt | context)
                     log_sum += math.log(p)
                     N += 1
-
+        # convert avg negative log probability back to normal space (normalization)
         return math.exp(-log_sum / N) if N > 0 else float("inf")

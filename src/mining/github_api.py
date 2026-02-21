@@ -21,7 +21,7 @@ def fetch_top_java_repos(
     per_page: int = 100,
     min_stars: int = 1000,
     min_size_kb: int = 1000,          # ~1MB repo size floor
-    pushed_after: str = "2024-02-17",  # adjust later; format YYYY-MM-DD
+    pushed_after: str = "2024-02-17",  # a year ago from today
     sleep_s: float = 0.2,
 ) -> List[RepoInfo]:
     repos: List[RepoInfo] = []
@@ -79,6 +79,7 @@ def fetch_top_java_repos(
 def repo_has_min_commits(full_name: str, min_commits: int = 100) -> bool:
     """
     Approximate commit count using GitHub commits API.
+    Note: this method is not used because we aren't actually able to retrieve the # of commits by looking at pagination
     """
     url = f"https://api.github.com/repos/{full_name}/commits"
     params = {"per_page": 1}

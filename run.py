@@ -61,47 +61,6 @@ def stage_split():
 
 
 
-# def stage_train():
-#     from src.modeling.train_validate import TrainConfig, train_and_validate
-
-#     train_sets = ["T1", "T2", "T3"]
-#     all_results = {}
-
-#     for ts in train_sets:   # loop training n = [3,5,7] for each training set
-#         print("\n" + "=" * 60)
-#         print(f"TRAINING SET: {ts}")
-#         print("=" * 60)
-
-#         cfg = TrainConfig(
-#             train_path=f"data/processed/{ts}.txt",
-#             val_path="data/processed/val.txt",
-#             n_values=[3, 5, 7],
-#             alpha=0.1
-#         )
-#         best_n, results = train_and_validate(cfg)
-#         all_results[ts] = (best_n, results)
-
-#     print("\nSummary (validation perplexity):")
-#     for ts in train_sets:
-#         best_n, results = all_results[ts]
-#         r3 = results.get(3)
-#         r5 = results.get(5)
-#         r7 = results.get(7)
-#         print(f"{ts}: n=3 {r3:.4f} | n=5 {r5:.4f} | n=7 {r7:.4f} | best={best_n}")
-
-# def run_backoff(train_path: str, val_path: str, n_values=(3,5,7), beta=0.4, unigram_alpha=0.1):
-#     results = {}
-#     for n in n_values:
-#         print(f"\nBackoff {n}-gram (beta={beta}, unigram_alpha={unigram_alpha}) on {train_path} ...")
-#         m = BackoffNGramModel(n=n, beta=beta, unigram_alpha=unigram_alpha)
-#         m.train_from_file(train_path)
-#         pp = m.perplexity(val_path)
-#         results[n] = pp
-#         print(f"{n}-gram backoff validation perplexity: {pp:.4f}")
-#     best_n = min(results, key=results.get)
-#     print(f"\nBest backoff n: {best_n} (PP={results[best_n]:.4f})")
-#     return results
-
 def stage_train():
     """
     train using both add-alpha AND backoff and see which one is better. 
@@ -173,9 +132,7 @@ def stage_train():
             f"{ts}: n=3 {results[3]:.4f} | n=5 {results[5]:.4f} | n=7 {results[7]:.4f} | best={best_n}"
         )
 
-    # --------------------------
     # Pick best model across BOTH smoothing methods
-    # --------------------------
     from src.utils.config_io import save_best_config
 
     candidates = []
@@ -217,42 +174,6 @@ def stage_train():
 
 
 
-# def stage_json():
-#     from src.modeling.ngram_model import NGramModel
-#     from src.evaluation.json_output import evaluate_to_json
-#     import os
-
-#     # Best config from validation
-#     BEST_N = 3
-#     ALPHA = 0.1
-#     TRAIN_PATH = "data/processed/T3.txt"
-
-#     model = NGramModel(n=BEST_N, alpha=ALPHA)
-#     model.train_from_file(TRAIN_PATH)
-
-#     os.makedirs("results", exist_ok=True)
-
-#     # Self-created test set
-#     evaluate_to_json(
-#         model=model,
-#         test_path="data/processed/test_self.txt",
-#         out_path="results/results-self.json",
-#         context_window=BEST_N,
-#         testset_name="test_self.txt"
-#     )
-
-#     # Provided test set
-#     provided_path = "data/processed/provided.txt"
-#     if os.path.exists(provided_path):       # if test set hasn't been provided yet, we skip
-#         evaluate_to_json(
-#             model=model,
-#             test_path=provided_path,
-#             out_path="results/results-provided.json",
-#             context_window=BEST_N,
-#             testset_name="provided.txt"
-#         )
-#     else:
-#         print("NOTE: data/processed/provided.txt not found yet. Add it, then rerun --stage json.")
 
 def stage_json():
     import os
