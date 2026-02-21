@@ -41,11 +41,13 @@ pip install -r requirements.txt
 ### Pipeline usage
 The entire pipeline is controlled through run.py
 Available stages:
+```
 mine    → Mine repositories and extract methods
 split   → Create training/validation/test datasets
 train   → Train models and compute validation perplexity
 json    → Generate JSON predictions and compute test perplexity
 all     → Run complete pipeline
+```
 
 ## Running the pipeline
 ### Mine Java repos and extract methods for training
@@ -62,7 +64,10 @@ Run:
 python run.py --stage mine
 ```
 
-Output will show in data/processed/all_methods.txt
+Output will show in 
+```
+data/processed/all_methods.txt
+```
 
 ### Split Datasets
 Creates:
@@ -77,24 +82,36 @@ Run:
 python run.py --stage split
 ```
 
-Output will be in the data/processed folder.
+Output will be in the folder
+```
+data/processed/
+```
 
 ### Train models and evaluate validation perplexity
 We will train T1, T2, T3 using n = 3, 5, 7
+- Add-alpha smoothing (α = 0.1)
+- Backoff smoothing (β = 0.4, unigram α = 0.1)
 
-The models will be trained TWICE, once using add-alpha, once using backoff. 
+The models will be trained TWICE, once using add-alpha, once using backoff.
 Results of each will be printed out, and we choose the best model (with the lowest perplexity)
 
 Run:
 ```
 python run.py --stage train
 ```
-The attributes of the best model will be stored in results/best_config.json
-This step will take a while. Backoff is much more time consuming. Est 1 hour.
+Output:
+The attributes of the best model will be stored in 
+```
+results/best_config.json
+```
+This step will take 1 hour.
 
 ### Generate JSON predictions and evaluate test perplexity
 The first step should have generated our own test set data/processed/test_self.txt
-Insert the professor's provided test set into that same folder data/processed and rename the file to provided.txt
+Before running, insert the professor's provided test set in
+```
+data/processed/provided.txt
+```
 
 We are going to generate results on both our self created test set and the provided test using the best model that is stored in best_config.json.
 
@@ -104,10 +121,12 @@ python run.py --stage json
 ```
 
 Output in results folder. You should see two files:
+```
 results-self.json
 results-provided.json
+```
 
-This step will take a long time because it will most likely choose n = 7 + backoff as the best model. If you only want to check that this step works, you can manually set n = 3 in the best_config.json generated in the previous step.
+This step will take an hour.
 
 ### Run entire pipeline
 Alternatively, you could run the entire pipeline (rather than going in stages) with 
