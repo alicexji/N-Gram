@@ -1,8 +1,3 @@
-{
-  "smoothing": "backoff",
-  "train_set": "T3",
-  "n": 7,
-  "beta": 0.4,
-  "unigram_alpha": 0.1,
-  "val_perplexity": 1.6817535670041626
-}
+version https://git-lfs.github.com/spec/v1
+oid sha256:22f8b8bebcebec1f5661d40da5332423321e251593ed59ad4747226a874e2f40
+size 145
